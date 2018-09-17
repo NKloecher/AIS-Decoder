@@ -15,6 +15,7 @@ public class NMEA_Converter {
         //TODO handle padding of bits to line, see multiline messages
         //TODO handle string returns in ascii (fx name)
         //TODO check COG method --  rl.se/aivdm vs libais
+        //TODO Do enums even make sense?
 
         //todo better solution than format %s + replace " " -> "0"
         //todo unit test all this :P
@@ -77,6 +78,7 @@ public class NMEA_Converter {
                     case 5:
                         ais = new AISTypeFiveDecoder(payload);
                         System.out.println(ais);
+                        System.out.println(ais.decode());
                         break;
                     case 18:
                         System.out.println("==========THIS ONE========");

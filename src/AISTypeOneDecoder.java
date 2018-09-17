@@ -1,9 +1,5 @@
-/*
+/**
     This class handles message types 1,2,3
-    Error messages {
-        "Undefined" = bad data value
-        "Unknown" = correct data, value not sent
-        }
  */
 public class AISTypeOneDecoder extends AISDecoder {
 

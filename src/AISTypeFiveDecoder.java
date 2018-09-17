@@ -28,8 +28,6 @@ public class AISTypeFiveDecoder extends AISDecoder{
         ais_version = Integer.parseInt(sb.substring(38,40),2);
         IMO = Integer.parseInt(sb.substring(40,70),2) + "";
 
-        //todo handle strings
-        //0-31 + 64 || 32-63 ==
         callsign = binaryAscii6ToString(sb.substring(70,112));
         vesselName = binaryAscii6ToString(sb.substring(112,232));
 
@@ -40,15 +38,14 @@ public class AISTypeFiveDecoder extends AISDecoder{
         mToStarboard = Integer.parseInt(sb.substring(264,270),2);
 
         epfd = Integer.parseInt(sb.substring(270,274),2);
-        //todo error handling
+
         ETA_month = Integer.parseInt(sb.substring(274,278),2);
         ETA_day = Integer.parseInt(sb.substring(278,283),2);
         ETA_hour = Integer.parseInt(sb.substring(283,288),2);
         ETA_minute = Integer.parseInt(sb.substring(288,294),2);
-        //todo meters/10?
+        // =/10
         draught = Integer.parseInt(sb.substring(294,302),2);
 
-        //todo handle string + variable bit length
         destination = binaryAscii6ToString(sb.substring(302,422));
 
     }
@@ -56,8 +53,26 @@ public class AISTypeFiveDecoder extends AISDecoder{
 
     @Override
     String decode() {
-        //todo pretty print
-        return null;
+
+        String version_s, ship_type_s;
+        version_s = aisVersion(ais_version);
+        ship_type_s = AISStatus.SHIP_TYPE.getEnumStatus(shipType);
+
+        return  "AISTypeFive{\n" +
+                "Message Type='" + msgType + "'\n" +
+                "Repeats='" + repeats + "'\n" +
+                "MMSI='" + MMSI + "'\n" +
+                "AIS Version='" + version_s + "'\n" +
+                "IMO='" + IMO + "'\n" +
+                "Callsign='" + callsign + "'\n" +
+                "Vessel name='" + vesselName + "'\n" +
+                "Ship type='" + ship_type_s + "'\n" +
+                "Length='" + (mToBow + mToStern) + "'\n" +
+                "Width='" + (mToStarboard + mToPort) + "'\n" +
+                "ETA='" + ETA_month + "/" + ETA_day + " " + ETA_day + ":" + ETA_minute + "'\n" +
+                "Draught='" + draught / 10.0 + "'\n" +
+                "Destination='" + destination + "'\n" +
+                "}";
     }
 
 

@@ -1,3 +1,10 @@
+/**
+ * Abstract base class for decoders.<br>
+ * Error messages {<br>
+ *         "Undefined" = bad data value<br>
+ *         "Unknown" = correct data, value not sent<br>
+ *         }
+ */
 abstract class AISDecoder {
 
     private final static int LONGITUDE_LENGTH = 28;
@@ -9,9 +16,9 @@ abstract class AISDecoder {
     String repeats; //number of repeats
     String MMSI; //ship id
     double lng; //longitude
-    boolean negLng;
+    boolean negLng; //if binary string is negative
     double lat; //latitude
-    boolean negLat;
+    boolean negLat; //as negLng
 
     /**
      * Assumes 8bit string that can be split into 6bit pieces<br>
@@ -120,11 +127,11 @@ abstract class AISDecoder {
             latitude += 1;
             latitude = -latitude;
             latDbl = latitude / 600000.0;
-            if (latDbl == 91) return "Not available";
+            if (latDbl == 91) return "Unknown";
             if (latDbl < -90 || latDbl > 91) return "Undefined";
             return Double.toString(latDbl);
         }
-        if (latDbl == 91) return "Not available";
+        if (latDbl == 91) return "Unknown";
         if (latDbl < -90 || latDbl > 91) return "Undefined";
         return Double.toString(latDbl);
     }
@@ -159,7 +166,7 @@ abstract class AISDecoder {
      * @return decoded maneuver as string
      */
     String decodeManeuver(int maneuver){
-        //Could use enum here as well... meh
+        //Could use enum here as well... meh.. the enums could be like this too...
         switch (maneuver){
             case 0:
                 return "Not available";
@@ -182,9 +189,14 @@ abstract class AISDecoder {
         return trueHeading % 360 + "";
     }
 
-
-
-
-
-
+    String aisVersion(int versionNumber){
+        switch (versionNumber){
+            case 0:
+                return "ITU1371 (default)";
+            case 1: case 2: case 3:
+                return "Future editions";
+            default:
+                return "Undefined";
+        }
+    }
 }
