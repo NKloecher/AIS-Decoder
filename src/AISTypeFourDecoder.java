@@ -1,7 +1,7 @@
 /*
     Handles msg type 4
  */
-public class AISTypeFourDecoder extends AISDecoder {
+public class AISTypeFourDecoder extends AISDecoder{
 
     private int year; //1-9999; 0=N/A
     private int month; //1-12; 0=N/A
@@ -10,14 +10,14 @@ public class AISTypeFourDecoder extends AISDecoder {
     private int minute;
     private int second;
     private int fixQuality;
-    private int epfp; //Electronic Position Fixing Device
+    private int epfd; //Electronic Position Fixing Device
 
 
-    AISTypeFourDecoder(String payload){
-
+    AISTypeFourDecoder(String payload, int msgType){
+        super(msgType);
         StringBuilder sb = binaryPayloadToStringBuilder(payload);
 
-        msgType = Integer.parseInt(sb.substring(0,6),2) + "";
+        //msgType = Integer.parseInt(sb.substring(0,6),2) + "";
         repeats = Integer.parseInt(sb.substring(6,8),2) + "";
         MMSI = String.valueOf(Integer.parseInt(sb.substring(8,38),2));
         year = Integer.parseInt(sb.substring(38,52),2);
@@ -35,7 +35,7 @@ public class AISTypeFourDecoder extends AISDecoder {
         negLat = binLat.startsWith("1");
         lat = Integer.parseInt(binLat,2);
 
-        epfp = Integer.parseInt(sb.substring(134,138),2);
+        epfd = Integer.parseInt(sb.substring(134,138),2);
         //trailing random stuff
     }
 
@@ -48,8 +48,6 @@ public class AISTypeFourDecoder extends AISDecoder {
 
         //Could possibly use Calendar instance of the ints
         year_s = String.valueOf(year);
-//        month_s = AISCalendar.MONTH.getMonthString(month);
-//        day_s = AISCalendar.DAY.getDayString(day);
         month_s = String.valueOf(month);
         day_s = String.valueOf(day);
         hour_s = String.valueOf(hour);
@@ -61,7 +59,7 @@ public class AISTypeFourDecoder extends AISDecoder {
         lng_s = calcLng(lng);
         lat_s = calcLat(lat);
 
-        epfd_s = AISStatus.EPFD.getEnumStatus(epfp);
+        epfd_s = EPFD[epfd];
 
         return String.format(
                         "AISTypeFourDecoder{\n" +
@@ -84,9 +82,63 @@ public class AISTypeFourDecoder extends AISDecoder {
     }
 
     @Override
+    dbClass toDBObject() {
+        return new dbClass();
+    }
+    class dbClass implements AisDbClass{
+        int msgType;
+        String MMSI;
+        int year;
+        int month;
+        int day;
+        int hour;
+        int minute;
+        int second;
+        String fixQuality;
+        double longitude;
+        double latitude;
+        String epfd;
+        private dbClass(){
+            msgType = Integer.parseInt(AISTypeFourDecoder.this.msgType);
+            MMSI = AISTypeFourDecoder.this.MMSI;
+            year = AISTypeFourDecoder.this.year;
+            month = AISTypeFourDecoder.this.month;
+            day = AISTypeFourDecoder.this.day;
+            hour = AISTypeFourDecoder.this.hour;
+            minute = AISTypeFourDecoder.this.minute;
+            second = AISTypeFourDecoder.this.second;
+            fixQuality = positionalAccuracy(AISTypeFourDecoder.this.epfd);
+            longitude = doubleLng(lng);
+            latitude = doubleLat(lat);
+            epfd = EPFD[AISTypeFourDecoder.this.epfd];
+        }
+        double doubleLat(double lat){
+            int latitude = (int) lat;
+            double latDbl = lat / 600000.0;
+            if (negLat){
+                latitude ^= AISDecoder.LAT_ONES;
+                latitude += 1;
+                latitude = -latitude;
+                latDbl = latitude / 600000.0;
+            }
+            return latDbl;
+        }
+        double doubleLng(double lng){
+            int longitude = (int) lng;
+            double lngDbl = lng / 600000.0;
+            if (negLng){
+                longitude ^= LNG_ONES;
+                longitude += 1;
+                longitude = -longitude;
+                lngDbl = longitude / 600000.0;
+            }
+            return lngDbl;
+        }
+    }
+
+    @Override
     public String toString() {
-        //do better :)
-        return "AISTypeFourDecoder{" +
+        return "AISTypeFourDecoder{(encoded) " +
                 "year=" + year +
                 ", month=" + month +
                 ", day=" + day +
@@ -94,7 +146,7 @@ public class AISTypeFourDecoder extends AISDecoder {
                 ", minute=" + minute +
                 ", second=" + second +
                 ", fixQuality=" + fixQuality +
-                ", epfp=" + epfp +
+                ", epfd=" + epfd +
                 ", msgType='" + msgType + '\'' +
                 ", repeats='" + repeats + '\'' +
                 ", MMSI='" + MMSI + '\'' +

@@ -1,3 +1,6 @@
+import java.util.Locale;
+import java.util.stream.Stream;
+
 /**
     This class handles message types 1,2,3
  */
@@ -12,11 +15,12 @@ public class AISTypeOneDecoder extends AISDecoder {
     private int timestamp; //second of UTC timestamp when msg was received
     private int maneuver; //part of a special maneuver
 
-    AISTypeOneDecoder(String payload){
-
+    AISTypeOneDecoder(){}
+    AISTypeOneDecoder(String payload, int msgType){
+        super(msgType);
         StringBuilder sb = binaryPayloadToStringBuilder(payload);
 
-        msgType = Integer.parseInt(sb.substring(0,6),2) + "";
+        //msgType = Integer.parseInt(sb.substring(0,6),2) + "";
         repeats = Integer.parseInt(sb.substring(6,8),2) + "";
         MMSI = String.valueOf(Integer.parseInt(sb.substring(8,38),2));
         navStatus = Integer.parseInt(sb.substring(38,42),2);
@@ -40,11 +44,66 @@ public class AISTypeOneDecoder extends AISDecoder {
     }
 
     @Override
+    dbClass toDBObject() {
+        return new dbClass();
+    }
+
+    class dbClass implements AisDbClass{
+        int msgType;
+        String MMSI;
+        double longitude;
+        double latitude;
+        String navigationStatus;
+        String rateOfTurn;
+        String speedOverGround;
+        String courseOverGround;
+        String positionalAccuracy;
+        String heading;
+        int timestamp;
+        String maneuver;
+        private dbClass(){
+            msgType = Integer.parseInt(AISTypeOneDecoder.this.msgType);
+            MMSI = AISTypeOneDecoder.this.MMSI;
+            longitude = doubleLng(lng);
+            latitude = doubleLat(lat);
+            navigationStatus = NAVSTAT[navStatus];
+            rateOfTurn = rateOfTurn(ROT);
+            speedOverGround = speedOverGround(SOG);
+            courseOverGround = calcCourse(COG);
+            positionalAccuracy = positionalAccuracy(posAcc);
+            heading = calcHeading(AISTypeOneDecoder.this.heading);
+            timestamp = AISTypeOneDecoder.this.timestamp;
+            maneuver = decodeManeuver(AISTypeOneDecoder.this.maneuver);
+        }
+        double doubleLat(double lat){
+            int latitude = (int) lat;
+            double latDbl = lat / 600000.0;
+            if (negLat){
+                latitude ^= AISDecoder.LAT_ONES;
+                latitude += 1;
+                latitude = -latitude;
+                latDbl = latitude / 600000.0;
+            }
+            return latDbl;
+        }
+        double doubleLng(double lng){
+            int longitude = (int) lng;
+            double lngDbl = lng / 600000.0;
+            if (negLng){
+                longitude ^= LNG_ONES;
+                longitude += 1;
+                longitude = -longitude;
+                lngDbl = longitude / 600000.0;
+            }
+            return lngDbl;
+        }
+    }
+
+    @Override
     public String decode(){
         String navStatus_s,ROT_s,SOG_s,posAcc_s,lng_s,lat_s,COG_s,heading_s,timestamp_s,maneuver_s;
 
-        //get nav status from the enum
-        navStatus_s = AISStatus.NavigationStatus.getEnumStatus(navStatus);
+        navStatus_s = NAVSTAT[navStatus];
 
         ROT_s = rateOfTurn(ROT);
         SOG_s = speedOverGround(SOG);
@@ -58,9 +117,7 @@ public class AISTypeOneDecoder extends AISDecoder {
         timestamp_s = calcTimestamp(timestamp);
         maneuver_s = decodeManeuver(maneuver);
 
-        //todo String.format / Stringbuilder for better message handling (decimals)
-
-        return "AISTypeOneDecoder{decoded\n" +
+        return "AISTypeOneDecoder{\n" +
                 "msgType='" + msgType + '\'' +
                 "\nrepeats='" + repeats + '\'' +
                 "\nMMSI='" + MMSI + '\'' +
@@ -83,20 +140,22 @@ public class AISTypeOneDecoder extends AISDecoder {
 
     @Override
     public String toString() {
-        return "AISTypeOneDecoder{encoded\n" +
+        return "AISTypeOneDecoder{(encoded) " +
                 "msgType='" + msgType + '\'' +
-                "\nrepeats='" + repeats + '\'' +
-                "\nMMSI='" + MMSI + '\'' +
-                "\nnavStatus='" + navStatus + '\'' +
-                "\nROT='" + ROT + '\'' +
-                "\nSOG='" + SOG + '\'' +
-                "\nposAcc='" + posAcc + '\'' +
-                "\nlng='" + lng + '\'' +
-                "\nlat='" + lat + '\'' +
-                "\nCOG='" + COG + '\'' +
-                "\nheading='" + heading + '\'' +
-                "\ntimestamp='" + timestamp + '\'' +
-                "\nmaneuver='" + maneuver + '\'' +
-                "\n}";
+                ", repeats='" + repeats + '\'' +
+                ", MMSI='" + MMSI + '\'' +
+                ", navStatus='" + navStatus + '\'' +
+                ", ROT='" + ROT + '\'' +
+                ", SOG='" + SOG + '\'' +
+                ", posAcc='" + posAcc + '\'' +
+                ", lng='" + lng + '\'' +
+                ", lat='" + lat + '\'' +
+                ", COG='" + COG + '\'' +
+                ", heading='" + heading + '\'' +
+                ", timestamp='" + timestamp + '\'' +
+                ", maneuver='" + maneuver + '\'' +
+                "}";
     }
+
+
 }
